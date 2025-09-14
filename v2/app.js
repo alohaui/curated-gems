@@ -35,7 +35,7 @@ async function init() {
             acc[item.source] = (acc[item.source] || 0) + 1;
             return acc;
         }, {});
-        sourceCounts['all'] = data.length;
+        sourceCounts['all'] = raw.length;
         // 渲染数据源选择器
         renderSources(['all', ...new Set(raw.map(x => x.source)), sourceCounts]);
 
