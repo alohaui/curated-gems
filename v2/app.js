@@ -31,9 +31,13 @@ async function init() {
         // 加载数据
         raw = await loadData();
         window.currentData = raw;
-
+        const sourceCounts = raw.reduce((acc, item) => {
+            acc[item.source] = (acc[item.source] || 0) + 1;
+            return acc;
+        }, {});
+        sourceCounts['all'] = data.length;
         // 渲染数据源选择器
-        renderSources(['all', ...new Set(raw.map(x => x.source))]);
+        renderSources(['all', ...new Set(raw.map(x => x.source)), sourceCounts]);
 
         // 绑定事件监听器
         bind();
@@ -156,27 +160,19 @@ function applyAndRender() {
 /**
  * 渲染数据源选择器
  */
-function renderSources(list) {
-    const lang = window.currentLang || 'zh';
-
-    sourcesEl.innerHTML = list.map(source => {
-        // 🌟 优化数据源显示文字
-        const displayText = source === 'all'
-            ? (lang === 'zh' ? '📚 全部精选' : '📚 All Sources')
-            : `✨ ${source}`;
-
-        const isActive = source === activeSource ? 'active' : '';
-
-        return `<span class="tag ${isActive}" data-source="${source}">${esc(displayText)}</span>`;
-    }).join('');
+function renderSources(source, currentSource, counts) {
+    
+  const isActive = source === currentSource;
+  const count = counts[source] || 0;
+  const displayName = source === 'all' ? (lang === 'zh' ? '全部来源' : 'All Sources') : source;
+  const sourceText = `${displayName} (${count})`;
+  return `<button class="source-tag ${isActive ? 'active' : ''}" data-source="${source}">${sourceText}</button>`;
 }
 
 /**
  * 渲染文章列表
  */
 function render(items) {
-    const lang = window.currentLang || 'zh';
-
     // 处理空结果情况
     if (!items.length) {
         listEl.innerHTML = '';
