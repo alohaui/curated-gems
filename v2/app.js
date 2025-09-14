@@ -31,13 +31,9 @@ async function init() {
         // 加载数据
         raw = await loadData();
         window.currentData = raw;
-        const sourceCounts = raw.reduce((acc, item) => {
-            acc[item.source] = (acc[item.source] || 0) + 1;
-            return acc;
-        }, {});
-        sourceCounts['all'] = raw.length;
+
         // 渲染数据源选择器
-        renderSources(['all', ...new Set(raw.map(x => x.source)), sourceCounts]);
+        renderSources(['all', ...new Set(raw.map(x => x.source))]);
 
         // 绑定事件监听器
         bind();
@@ -155,24 +151,51 @@ function applyAndRender() {
 
     // 渲染结果
     render(view);
+    
+    // 更新数据源选择器（显示数量）
+    renderSources(['all', ...new Set(raw.map(x => x.source))]);
 }
 
 /**
  * 渲染数据源选择器
  */
-function renderSources(source, currentSource, counts) {
-    
-  const isActive = source === currentSource;
-  const count = counts[source] || 0;
-  const displayName = source === 'all' ? (lang === 'zh' ? '全部来源' : 'All Sources') : source;
-  const sourceText = `${displayName} (${count})`;
-  return `<button class="source-tag ${isActive ? 'active' : ''}" data-source="${source}">${sourceText}</button>`;
+function renderSources(list) {
+    const lang = window.currentLang || 'zh';
+
+    // 计算每个数据源的文章数量
+    const sourceCounts = {};
+    raw.forEach(item => {
+        sourceCounts[item.source] = (sourceCounts[item.source] || 0) + 1;
+    });
+
+    sourcesEl.innerHTML = list.map(source => {
+        let displayText;
+        let count = 0;
+
+        if (source === 'all') {
+            // 全部来源显示总数量
+            count = raw.length;
+            displayText = lang === 'zh' 
+                ? `📚 全部精选 (${count})` 
+                : `📚 All Sources (${count})`;
+        } else {
+            // 具体来源显示该来源的数量
+            count = sourceCounts[source] || 0;
+            displayText = `✨ ${source} (${count})`; 
+        }
+
+        const isActive = source === activeSource ? 'active' : '';
+
+        return `<span class="tag ${isActive}" data-source="${source}">${esc(displayText)}</span>`;
+    }).join('');
 }
 
 /**
  * 渲染文章列表
  */
 function render(items) {
+    const lang = window.currentLang || 'zh';
+
     // 处理空结果情况
     if (!items.length) {
         listEl.innerHTML = '';
